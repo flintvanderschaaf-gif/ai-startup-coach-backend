@@ -6,6 +6,8 @@ from slowapi.errors import RateLimitExceeded
 from pydantic import BaseModel
 import httpx
 import os
+import json
+import re
 
 app = FastAPI()
 limiter = Limiter(key_func=get_remote_address)
@@ -44,40 +46,37 @@ Een gebruiker heeft deze antwoorden gegeven:
 - Gewenst inkomen type: {data.inkomen}
 - Ambitie: {data.grootte}
 
-Geef een JSON response met exact deze velden (geen uitleg, alleen JSON):
-{{
-  "score": <getal tussen 70 en 99>,
-  "idee": "<naam van het businessidee, max 4 woorden>",
-  "beschrijving": "<2 zinnen uitleg waarom dit past bij deze persoon>",
-  "tags": ["<tag1>", "<tag2>", "<tag3>"],
-  "eerste_stap": "<1 concrete actie die ze vandaag kunnen doen>"
-}}
+Geef ALLEEN een JSON response zonder uitleg of markdown:
+{{"score": 85, "idee": "AI Tool Builder", "beschrijving": "2 zinnen waarom dit past.", "tags": ["Online", "Gratis", "Passief"], "eerste_stap": "1 concrete actie vandaag"}}
 """
 
-    async with httpx.AsyncClient() as client:
-        response = await client.post(
-            "https://api.groq.com/openai/v1/chat/completions",
-            headers={
-                "Authorization": f"Bearer {GROQ_API_KEY}",
-                "Content-Type": "application/json"
-            },
-            json={
-                "model": "llama3-8b-8192",
-                "messages": [{"role": "user", "content": prompt}],
-                "max_tokens": 300,
-                "temperature": 0.7
-            },
-            timeout=15
-        )
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                "https://api.groq.com/openai/v1/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {GROQ_API_KEY}",
+                    "Content-Type": "application/json"
+                },
+                json={
+                    "model": "llama3-8b-8192",
+                    "messages": [{"role": "user", "content": prompt}],
+                    "max_tokens": 300,
+                    "temperature": 0.7
+                },
+                timeout=20
+            )
 
-    result = response.json()
-    text = result["choices"][0]["message"]["content"]
+        result = response.json()
+        print("Groq response:", result)  # debug log
 
-    # Parse JSON from response
-    import json, re
-    match = re.search(r'\{.*\}', text, re.DOTALL)
-    if match:
-        data_out = json.loads(match.group())
-        return data_out
-    else:
-        return {"score": 80, "idee": "AI Content Creator", "beschrijving": "Past goed bij jou.", "tags": ["Online", "Gratis"], "eerste_stap": "Maak een gratis Groq account aan."}
+        text = result["choices"][0]["message"]["content"]
+        match = re.search(r'\{.*\}', text, re.DOTALL)
+        if match:
+            return json.loads(match.group())
+        else:
+            return {"score": 80, "idee": "AI Content Creator", "beschrijving": "Past goed bij jou.", "tags": ["Online", "Gratis", "Passief"], "eerste_stap": "Maak vandaag een gratis Groq account aan."}
+
+    except Exception as e:
+        print("ERROR:", str(e))
+        return {"score": 80, "idee": "AI Content Creator", "beschrijving": "Past goed bij jou.", "tags": ["Online", "Gratis", "Passief"], "eerste_stap": "Maak vandaag een gratis Groq account aan."}
