@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Startup Coach</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f7f9fc;
+      --card: #ffffff;
+      --border: #dde6f0;
+      --accent: #3b82f6;
+      --accent2: #0ea5e9;
+      --text: #1a2332;
+      --muted: #6b7c93;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* NOISE OVERLAY */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.4;
+    }
+
+    /* GLOW BLOBS */
+    .blob {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(120px);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .blob-1 {
+      width: 500px; height: 500px;
+      background: rgba(59, 130, 246, 0.08);
+      top: -100px; left: -100px;
+      animation: float1 8s ease-in-out infinite;
+    }
+    .blob-2 {
+      width: 400px; height: 400px;
+      background: rgba(14, 165, 233, 0.07);
+      bottom: -100px; right: -100px;
+      animation: float2 10s ease-in-out infinite;
+    }
+    @keyframes float1 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(40px,30px)} }
+    @keyframes float2 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(-30px,-40px)} }
+
+    /* NAV */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 20px 48px;
+      background: rgba(247,249,252,0.85);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+    }
+    .logo {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1.2rem;
+      letter-spacing: -0.5px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .nav-cta {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      padding: 10px 22px;
+      border-radius: 8px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .nav-cta:hover { opacity: 0.85; }
+
+    /* HERO */
+    .hero {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 120px 24px 80px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(124,92,252,0.12);
+      border: 1px solid rgba(124,92,252,0.3);
+      border-radius: 100px;
+      padding: 6px 16px;
+      font-size: 0.8rem;
+      color: var(--accent);
+      font-weight: 500;
+      margin-bottom: 28px;
+      animation: fadeUp 0.6s ease both;
+    }
+    .badge-dot {
+      width: 6px; height: 6px;
+      background: var(--accent2);
+      border-radius: 50%;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+    h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(2.4rem, 6vw, 5rem);
+      font-weight: 800;
+      line-height: 1.08;
+      letter-spacing: -2px;
+      max-width: 800px;
+      margin-bottom: 24px;
+      animation: fadeUp 0.6s 0.1s ease both;
+    }
+    h1 span {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-sub {
+      font-size: clamp(1rem, 2vw, 1.2rem);
+      color: var(--muted);
+      max-width: 520px;
+      line-height: 1.7;
+      margin-bottom: 40px;
+      animation: fadeUp 0.6s 0.2s ease both;
+    }
+
+    .hero-buttons {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      justify-content: center;
+      animation: fadeUp 0.6s 0.3s ease both;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), #9b7eff);
+      color: #fff;
+      border: none;
+      padding: 14px 32px;
+      border-radius: 10px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 4px 24px rgba(59,130,246,0.15);
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 32px rgba(59,130,246,0.25);
+    }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 14px 32px;
+      border-radius: 10px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .btn-secondary:hover {
+      border-color: var(--accent);
+      background: rgba(124,92,252,0.07);
+    }
+
+    /* SCORE PREVIEW */
+    .score-preview {
+      margin-top: 64px;
+      position: relative;
+      animation: fadeUp 0.6s 0.4s ease both;
+    }
+    .score-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 32px 40px;
+      max-width: 420px;
+      margin: 0 auto;
+      position: relative;
+      overflow: hidden;
+    }
+    .score-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+    }
+    .score-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+    .score-number {
+      font-family: 'Syne', sans-serif;
+      font-size: 4rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+    .score-title {
+      font-size: 1.1rem;
+      font-weight: 500;
+      margin-bottom: 16px;
+    }
+    .score-tags {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .tag {
+      background: rgba(124,92,252,0.1);
+      border: 1px solid rgba(124,92,252,0.2);
+      color: var(--accent);
+      padding: 4px 12px;
+      border-radius: 100px;
+      font-size: 0.8rem;
+    }
+    .tag.green {
+      background: rgba(0,229,192,0.1);
+      border-color: rgba(0,229,192,0.2);
+      color: var(--accent2);
+    }
+
+    /* FEATURES */
+    .section {
+      position: relative;
+      z-index: 1;
+      padding: 100px 24px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .section-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      color: var(--accent);
+      margin-bottom: 16px;
+    }
+    .section-title {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(1.8rem, 4vw, 3rem);
+      font-weight: 800;
+      letter-spacing: -1px;
+      margin-bottom: 60px;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+    }
+
+    .feature-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    .feature-card:hover {
+      border-color: rgba(124,92,252,0.4);
+      transform: translateY(-4px);
+    }
+    .feature-icon {
+      font-size: 1.8rem;
+      margin-bottom: 16px;
+    }
+    .feature-name {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .feature-desc {
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    /* PRICING */
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 20px;
+      max-width: 860px;
+      margin: 0 auto;
+    }
+
+    .price-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px 28px;
+      transition: border-color 0.2s;
+    }
+    .price-card.featured {
+      border-color: var(--accent);
+      position: relative;
+      overflow: hidden;
+    }
+    .price-card.featured::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+    }
+    .price-tier {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+    .price-amount {
+      font-family: 'Syne', sans-serif;
+      font-size: 2.4rem;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+    .price-sub {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-bottom: 24px;
+    }
+    .price-features {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 28px;
+    }
+    .price-features li {
+      font-size: 0.9rem;
+      color: var(--muted);
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+    .price-features li::before {
+      content: '✓';
+      color: var(--accent2);
+      flex-shrink: 0;
+      font-weight: 700;
+    }
+    .price-btn {
+      width: 100%;
+      padding: 12px;
+      border-radius: 10px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.2s;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text);
+    }
+    .price-card.featured .price-btn {
+      background: linear-gradient(135deg, var(--accent), #9b7eff);
+      border: none;
+      color: #fff;
+      box-shadow: 0 4px 20px rgba(59,130,246,0.2);
+    }
+    .price-btn:hover { opacity: 0.85; transform: translateY(-1px); }
+
+    /* FORM SECTION */
+    .form-section {
+      position: relative;
+      z-index: 1;
+      padding: 100px 24px;
+      text-align: center;
+    }
+    .form-wrap {
+      max-width: 600px;
+      margin: 0 auto;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 48px 40px;
+      position: relative;
+      overflow: hidden;
+    }
+    .form-wrap::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+    }
+    .form-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.8rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+    .form-sub {
+      color: var(--muted);
+      margin-bottom: 32px;
+      font-size: 0.95rem;
+    }
+
+    .form-step { display: none; }
+    .form-step.active { display: block; }
+
+    .question {
+      font-size: 1rem;
+      font-weight: 500;
+      margin-bottom: 16px;
+      text-align: left;
+    }
+    .progress {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 28px;
+    }
+    .progress-bar {
+      height: 3px;
+      flex: 1;
+      background: var(--border);
+      border-radius: 2px;
+      transition: background 0.3s;
+    }
+    .progress-bar.done { background: var(--accent); }
+
+    .options {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+    .option {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 12px 16px;
+      border-radius: 10px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+      cursor: pointer;
+      text-align: left;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .option:hover, .option.selected {
+      border-color: var(--accent);
+      background: rgba(124,92,252,0.1);
+      color: var(--accent);
+    }
+
+    .form-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 8px;
+    }
+    .step-count { font-size: 0.85rem; color: var(--muted); }
+
+    /* RESULT */
+    #result-section { display: none; }
+    .result-score {
+      font-family: 'Syne', sans-serif;
+      font-size: 5rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      line-height: 1;
+      margin: 16px 0 8px;
+    }
+    .result-idea {
+      font-size: 1.3rem;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+    .result-desc {
+      color: var(--muted);
+      font-size: 0.95rem;
+      line-height: 1.7;
+      margin-bottom: 24px;
+    }
+    .share-btn {
+      background: rgba(0,229,192,0.1);
+      border: 1px solid rgba(0,229,192,0.3);
+      color: var(--accent2);
+      padding: 10px 24px;
+      border-radius: 8px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .share-btn:hover { background: rgba(0,229,192,0.2); }
+
+    /* FOOTER */
+    footer {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      padding: 40px 24px;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+
+    /* ANIMATIONS */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* GDPR */
+    .gdpr {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      text-align: left;
+      margin-bottom: 20px;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+    .gdpr input { margin-top: 2px; accent-color: var(--accent); }
+
+    @media (max-width: 600px) {
+      nav { padding: 16px 20px; }
+      .form-wrap { padding: 32px 20px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="blob blob-1"></div>
+<div class="blob blob-2"></div>
+
+<!-- NAV -->
+<nav>
+  <div class="logo">AI Startup Coach</div>
+  <button class="nav-cta" onclick="document.getElementById('start').scrollIntoView({behavior:'smooth'})">Start gratis →</button>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="badge">
+    <span class="badge-dot"></span>
+    Speciaal voor tieners in NL & BE
+  </div>
+  <h1>Ontdek welk bedrijf<br/><span>bij jou past</span></h1>
+  <p class="hero-sub">AI analyseert jouw situatie en geeft een persoonlijk businessadvies + 90-dagen stappenplan. Gratis, in het Nederlands.</p>
+  <div class="hero-buttons">
+    <button class="btn-primary" onclick="document.getElementById('start').scrollIntoView({behavior:'smooth'})">Doe de test — gratis</button>
+    <button class="btn-secondary" onclick="document.getElementById('features').scrollIntoView({behavior:'smooth'})">Hoe werkt het?</button>
+  </div>
+
+  <div class="score-preview">
+    <div class="score-card">
+      <div class="score-label">Jouw Business Match Score</div>
+      <div class="score-number">87</div>
+      <div class="score-title">Content Creator met AI</div>
+      <div class="score-tags">
+        <span class="tag">Passief inkomen</span>
+        <span class="tag green">Gratis te starten</span>
+        <span class="tag">Online</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="section" id="features">
+  <div class="section-label">Functies</div>
+  <div class="section-title">Alles wat je nodig hebt</div>
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon">🎯</div>
+      <div class="feature-name">Business Match Score</div>
+      <div class="feature-desc">Deelbare score op maat — perfect voor TikTok en Instagram.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🤖</div>
+      <div class="feature-name">Persoonlijk AI-advies</div>
+      <div class="feature-desc">Gebaseerd op jouw skills, tijd en situatie — niet generiek.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📅</div>
+      <div class="feature-name">90-Dagen Stappenplan</div>
+      <div class="feature-desc">Dagelijkse micro-taken zodat je nooit weet wat je moet doen.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">⚠️</div>
+      <div class="feature-name">Risicoanalyse</div>
+      <div class="feature-desc">Eerlijke verwachtingen — geen nepbeloftes over snel rijk worden.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">💬</div>
+      <div class="feature-name">AI-Mentor Chat</div>
+      <div class="feature-desc">Stel vragen op elk moment — alsof je een coach in je zak hebt.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📊</div>
+      <div class="feature-name">Verdienpotentieel</div>
+      <div class="feature-desc">Eerlijke schatting van wat je kunt verdienen per niche.</div>
+    </div>
+  </div>
+</section>
+
+<!-- QUIZ / FORM -->
+<section class="form-section" id="start">
+  <div class="form-wrap">
+    <div id="quiz-section">
+      <div class="form-title">Doe de test</div>
+      <div class="form-sub">5 vragen — 2 minuten — gratis resultaat</div>
+
+      <div class="progress" id="progress">
+        <div class="progress-bar" id="p0"></div>
+        <div class="progress-bar" id="p1"></div>
+        <div class="progress-bar" id="p2"></div>
+        <div class="progress-bar" id="p3"></div>
+        <div class="progress-bar" id="p4"></div>
+      </div>
+
+      <!-- Stap 1 -->
+      <div class="form-step active" id="step-0">
+        <div class="question">Hoeveel tijd heb je per week?</div>
+        <div class="options">
+          <button class="option" onclick="select(0,this,'Minder dan 5 uur')">Minder dan 5 uur</button>
+          <button class="option" onclick="select(0,this,'5–15 uur')">5–15 uur</button>
+          <button class="option" onclick="select(0,this,'15–28 uur')">15–28 uur</button>
+          <button class="option" onclick="select(0,this,'28+ uur')">28+ uur</button>
+        </div>
+        <div class="form-nav">
+          <span class="step-count">1 / 5</span>
+          <button class="btn-primary" onclick="next(0)">Volgende →</button>
+        </div>
+      </div>
+
+      <!-- Stap 2 -->
+      <div class="form-step" id="step-1">
+        <div class="question">Wat past het beste bij jou?</div>
+        <div class="options">
+          <button class="option" onclick="select(1,this,'Creatief — design, video, schrijven')">🎨 Creatief — design, video, schrijven</button>
+          <button class="option" onclick="select(1,this,'Technisch — code, AI, computers')">💻 Technisch — code, AI, computers</button>
+          <button class="option" onclick="select(1,this,'Sociaal — mensen helpen, verkopen')">🤝 Sociaal — mensen helpen, verkopen</button>
+          <button class="option" onclick="select(1,this,'Analytisch — data, planning, strategie')">📊 Analytisch — data, planning, strategie</button>
+        </div>
+        <div class="form-nav">
+          <span class="step-count">2 / 5</span>
+          <button class="btn-primary" onclick="next(1)">Volgende →</button>
+        </div>
+      </div>
+
+      <!-- Stap 3 -->
+      <div class="form-step" id="step-2">
+        <div class="question">Wat is je startbudget?</div>
+        <div class="options">
+          <button class="option" onclick="select(2,this,'€0 — volledig gratis starten')">€0 — volledig gratis starten</button>
+          <button class="option" onclick="select(2,this,'€1–€50')">€1–€50</button>
+          <button class="option" onclick="select(2,this,'€50–€200')">€50–€200</button>
+          <button class="option" onclick="select(2,this,'€200+')">€200+</button>
+        </div>
+        <div class="form-nav">
+          <span class="step-count">3 / 5</span>
+          <button class="btn-primary" onclick="next(2)">Volgende →</button>
+        </div>
+      </div>
+
+      <!-- Stap 4 -->
+      <div class="form-step" id="step-3">
+        <div class="question">Wat voor inkomen wil je?</div>
+        <div class="options">
+          <button class="option" onclick="select(3,this,'Passief — geld verdienen terwijl ik slaap')">😴 Passief — geld verdienen terwijl ik slaap</button>
+          <button class="option" onclick="select(3,this,'Actief — direct geld voor mijn werk')">⚡ Actief — direct geld voor mijn werk</button>
+          <button class="option" onclick="select(3,this,'Beiden — mix van actief en passief')">🔄 Beiden — mix van actief en passief</button>
+        </div>
+        <div class="form-nav">
+          <span class="step-count">4 / 5</span>
+          <button class="btn-primary" onclick="next(3)">Volgende →</button>
+        </div>
+      </div>
+
+      <!-- Stap 5 -->
+      <div class="form-step" id="step-4">
+        <div class="question">Hoe groot wil je worden?</div>
+        <div class="options">
+          <button class="option" onclick="select(4,this,'Klein bijverdienen naast school')">📚 Klein bijverdienen naast school</button>
+          <button class="option" onclick="select(4,this,'Fulltime inkomen opbouwen')">💼 Fulltime inkomen opbouwen</button>
+          <button class="option" onclick="select(4,this,'Een groot bedrijf bouwen')">🚀 Een groot bedrijf bouwen</button>
+        </div>
+        <div class="gdpr">
+          <input type="checkbox" id="gdpr-check" required />
+          <label for="gdpr-check">Ik ben 16+ of heb toestemming van mijn ouders om deze tool te gebruiken.</label>
+        </div>
+        <div class="form-nav">
+          <span class="step-count">5 / 5</span>
+          <button class="btn-primary" onclick="showResult()">Bekijk mijn score 🎯</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- RESULT -->
+    <div id="result-section">
+      <div class="score-label">Jouw Business Match Score</div>
+      <div class="result-score" id="score-display">84</div>
+      <div class="result-idea" id="idea-display">AI Content Creator</div>
+      <div class="result-desc" id="desc-display">Op basis van jouw antwoorden past een online AI-business het beste bij jou. Je kunt starten met €0, werkt goed solo, en heeft passief inkomstenpotentieel.</div>
+      <div class="score-tags" style="justify-content:center;margin-bottom:24px">
+        <span class="tag">Passief inkomen</span>
+        <span class="tag green">€0 om te starten</span>
+        <span class="tag">Online</span>
+      </div>
+      <button class="share-btn" onclick="share()">📤 Deel mijn score</button>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="section">
+  <div class="section-label" style="text-align:center">Prijzen</div>
+  <div class="section-title" style="text-align:center">Start gratis,<br/>upgrade wanneer je wilt</div>
+  <div class="pricing-grid">
+    <div class="price-card">
+      <div class="price-tier">Gratis</div>
+      <div class="price-amount">€0</div>
+      <div class="price-sub">Voor altijd gratis</div>
+      <ul class="price-features">
+        <li>Basisanalyse</li>
+        <li>1x Business Match Score</li>
+        <li>Eerste 7 dagentaken</li>
+      </ul>
+      <button class="price-btn" onclick="document.getElementById('start').scrollIntoView({behavior:'smooth'})">Start gratis</button>
+    </div>
+    <div class="price-card featured">
+      <div class="price-tier">Pro</div>
+      <div class="price-amount">€9,99</div>
+      <div class="price-sub">per maand</div>
+      <ul class="price-features">
+        <li>Onbeperkte analyses</li>
+        <li>Volledig 90-dagen plan</li>
+        <li>Wekelijkse AI check-in</li>
+        <li>AI-mentor chat</li>
+      </ul>
+      <button class="price-btn">Binnenkort beschikbaar</button>
+    </div>
+    <div class="price-card">
+      <div class="price-tier">Lifetime</div>
+      <div class="price-amount">€49,99</div>
+      <div class="price-sub">eenmalig</div>
+      <ul class="price-features">
+        <li>5x analyses</li>
+        <li>30-dagen stappenplan</li>
+        <li>Geen maandkosten</li>
+      </ul>
+      <button class="price-btn">Binnenkort beschikbaar</button>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <p>© 2025 AI Startup Coach · Gemaakt voor tieners in NL & BE</p>
+  <p style="margin-top:10px"><a href="privacybeleid.html" style="color:#3b82f6;margin-right:16px">Privacybeleid</a><a href="disclaimer.html" style="color:#3b82f6">Disclaimer</a></p>
+</footer>
+
+<script>
+  const answers = {};
+
+  function select(step, btn, value) {
+    document.querySelectorAll(`#step-${step} .option`).forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    answers[step] = value;
+  }
+
+  function next(step) {
+    if (!answers[step]) {
+      alert('Kies eerst een optie!');
+      return;
+    }
+    document.getElementById(`step-${step}`).classList.remove('active');
+    document.getElementById(`step-${step + 1}`).classList.add('active');
+    document.getElementById(`p${step}`).classList.add('done');
+  }
+
+  async function showResult() {
+    const gdpr = document.getElementById('gdpr-check');
+    if (!answers[4]) { alert('Kies eerst een optie!'); return; }
+    if (!gdpr.checked) { alert('Vink de leeftijdsverklaring aan!'); return; }
+
+    document.getElementById('p4').classList.add('done');
+
+    document.getElementById('quiz-section').style.display = 'none';
+    document.getElementById('result-section').style.display = 'block';
+    document.getElementById('score-display').textContent = '...';
+    document.getElementById('idea-display').textContent = 'AI analyseert jouw profiel...';
+    document.getElementById('desc-display').textContent = 'Even geduld, dit duurt max 10 seconden.';
+
+    try {
+      const response = await fetch('https://ai-startup-coach-backend.onrender.com/analyse', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tijd: answers[0] || '',
+          skill: answers[1] || '',
+          budget: answers[2] || '',
+          inkomen: answers[3] || '',
+          grootte: answers[4] || ''
+        })
+      });
+
+      const data = await response.json();
+
+      document.getElementById('score-display').textContent = data.score || 80;
+      document.getElementById('idea-display').textContent = data.idee || 'AI Content Creator';
+      document.getElementById('desc-display').textContent = data.beschrijving || '';
+
+      const tagsEl = document.querySelector('#result-section .score-tags');
+      if (data.tags && tagsEl) {
+        tagsEl.innerHTML = data.tags.map((t, i) =>
+          '<span class="tag ' + (i === 1 ? 'green' : '') + '">' + t + '</span>'
+        ).join('');
+      }
+
+      const res = document.getElementById('result-section');
+
+      // Wat is het
+      if (data.wat_is_het) {
+        const el = document.createElement('p');
+        el.style.cssText = 'margin-top:12px;font-size:0.95rem;color:#444;line-height:1.6;';
+        el.innerHTML = '<strong>Wat is dit?</strong> ' + data.wat_is_het;
+        res.appendChild(el);
+      }
+
+      // Verdien potentieel
+      if (data.verdien_potentieel) {
+        const el = document.createElement('div');
+        el.style.cssText = 'margin-top:12px;padding:12px 16px;background:#f0fdf4;border-radius:10px;font-size:0.9rem;color:#166534;border-left:3px solid #22c55e;text-align:left;';
+        el.innerHTML = '<strong>💰 Verdienpotentieel:</strong> ' + data.verdien_potentieel;
+        res.appendChild(el);
+      }
+
+      // Risico
+      if (data.risico) {
+        const kleur = data.risico === 'laag' ? '#f0fdf4' : data.risico === 'gemiddeld' ? '#fffbeb' : '#fef2f2';
+        const rand = data.risico === 'laag' ? '#22c55e' : data.risico === 'gemiddeld' ? '#f59e0b' : '#ef4444';
+        const tekstkleur = data.risico === 'laag' ? '#166534' : data.risico === 'gemiddeld' ? '#92400e' : '#991b1b';
+        const el = document.createElement('div');
+        el.style.cssText = 'margin-top:12px;padding:12px 16px;background:' + kleur + ';border-radius:10px;font-size:0.9rem;color:' + tekstkleur + ';border-left:3px solid ' + rand + ';text-align:left;';
+        el.innerHTML = '<strong>⚠️ Risico: ' + data.risico + '</strong> — ' + (data.risico_uitleg || '');
+        res.appendChild(el);
+      }
+
+      // Stappen
+      if (data.stappen && data.stappen.length) {
+        const el = document.createElement('div');
+        el.style.cssText = 'margin-top:12px;padding:12px 16px;background:#f0f7ff;border-radius:10px;text-align:left;';
+        el.innerHTML = '<strong>📅 Jouw stappenplan:</strong><ol style="margin-top:8px;padding-left:18px;font-size:0.9rem;color:#1a2332;line-height:1.8">' + data.stappen.map(s => '<li>' + s + '</li>').join('') + '</ol>';
+        res.appendChild(el);
+      }
+
+      // Eerste stap
+      if (data.eerste_stap) {
+        const el = document.createElement('div');
+        el.style.cssText = 'margin-top:12px;padding:12px 16px;background:#faf5ff;border-radius:10px;font-size:0.9rem;color:#6b21a8;border-left:3px solid #a855f7;text-align:left;';
+        el.innerHTML = '<strong>🚀 Doe dit vandaag:</strong> ' + data.eerste_stap;
+        res.appendChild(el);
+      }
+
+    } catch (err) {
+      document.getElementById('score-display').textContent = '80';
+      document.getElementById('idea-display').textContent = 'AI Content Creator';
+      document.getElementById('desc-display').textContent = 'Er ging iets mis met de verbinding. Probeer het opnieuw.';
+    }
+  }
+
+  function share() {
+    const score = document.getElementById('score-display').textContent;
+    const idea = document.getElementById('idea-display').textContent;
+    if (navigator.share) {
+      navigator.share({ title: 'Mijn Business Match Score', text: `Mijn AI Startup Coach score is ${score}/100 — ${idea}! Doe jij ook de test?`, url: window.location.href });
+    } else {
+      navigator.clipboard.writeText(`Mijn AI Startup Coach score is ${score}/100 — ${idea}! Doe jij ook de test? ${window.location.href}`);
+      alert('Score gekopieerd! Plak het op TikTok of Instagram.');
+    }
+  }
+</script>
+</body>
+</html>
